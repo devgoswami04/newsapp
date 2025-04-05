@@ -1,9 +1,11 @@
 import './App.css';
+import "./components/navbar.css";
 
-import React, { Component } from 'react'
-import Navbar from './components/Navbar';
-import News from './components/News';
-import { BrowserRouter, Routes, Route } from "react-router";
+import React, { Component } from "react";
+import Navbar from "./components/Navbar";
+import News from "./components/News";
+import { BrowserRouter, Routes, Route } from "react-router-dom";  
+
 export default class App extends Component {
   render() {
     return (
@@ -11,7 +13,7 @@ export default class App extends Component {
         <BrowserRouter>
           <Navbar />
 
-          <Routes> key=""
+          <Routes>
             <Route exact path="/" element={<News key="General" pageSize={6} country="us" category="General" />} />
             <Route exact path="/business" element={<News key="Business" pageSize={6} country="us" category="Business" />} />
             <Route exact path="/entertainment" element={<News key="Entertainment" pageSize={6} country="us" category="Entertainment" />} />
@@ -23,7 +25,6 @@ export default class App extends Component {
           </Routes>
         </BrowserRouter>
       </div>
-    )
+    );
   }
 }
-

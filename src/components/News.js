@@ -1,78 +1,135 @@
 import React, { Component } from 'react'
-import NewItem from './NewItem'
-import Spinner from './Spinner';
 import PropTypes from 'prop-types'
-
+import Spinner from './Spinner';
+import './news.css' // Import the custom CSS
 
 export class News extends Component {
-   static defaultProps={
-    country:'us',
-    pageSize:8,
-    category:"general"
-   };
-   static propTypes={
-    country:PropTypes.string,
-    pageSize:PropTypes.number,
-    category:PropTypes.string
-   };
-    constructor() {
-        super();
-        this.state = {
-            articles: [],
-            loading: false,
-            page:1
-        }
-    }
-    async componentDidMount(){
-        let url=`https://newsapi.org/v2/top-headlines?country=${this.props.country}&category=${this.props.category}&apiKey=fb5c69c601754b2abbc697ac218221c3&pageSize=${this.props.pageSize}`;
-        this.setState({loading:true});
-        let data= await fetch(url);
-        let parsedData=await data.json();
-        this.setState({articles: parsedData.articles,
-            totalResults:parsedData.totalResults,
-            loading:false
-        });
-    }
-    handleNextclick=async ()=>{
-    
-        let url=`https://newsapi.org/v2/top-headlines?country=${this.props.country}&category=${this.props.category}&apiKey=fb5c69c601754b2abbc697ac218221c3&page= ${this.state.page+1}&pageSize=${this.props.pageSize}`;
-        this.setState({loading:true});
-        let data= await fetch(url);
-        let parsedData=await data.json();
-        this.setState({page:this.state.page+1,
-            articles: parsedData.articles,
-            loading:false
-        })}
-    handlePreviousclick=async ()=>{
-        let url=`https://newsapi.org/v2/top-headlines?country=${this.props.country}&category=${this.props.category}&apiKey=fb5c69c601754b2abbc697ac218221c3&page= ${this.state.page-1}&pageSize=${this.props.pageSize}`;
-        this.setState({loading:true});
-        let data= await fetch(url);
-        let parsedData=await data.json();
-        this.setState({page:this.state.page-1,
-            articles: parsedData.articles,
-            loading:false
-        })
-    }
-    render() {
-        return (
+  static defaultProps = {
+    country: 'us',
+    pageSize: 8,
+    category: "general"
+  };
+  
+  static propTypes = {
+    country: PropTypes.string,
+    pageSize: PropTypes.number,
+    category: PropTypes.string
+  };
 
-            <div className="container my-3 ">
-                <h1 className="text-center">Chronicle-Top Headlines</h1>
-                {this.state.loading && <Spinner/>}
-                <div className="row ">
-                    {!this.state.loading && this.state.articles.map((element) => {
-                       return  <div className="col-md-4" key={element.url}>
-                            <NewItem  title={element.title?element.title.slice(0,40):""} description={element.description?element.description.slice(0,80):""} imageUrl={element.urlToImage} newsUrl={element.url} author={element.author} date={element.publishedAt} source={element.source.name} />
-                        </div>
-                    })}
-                    <div className="container d-flex justify-content-between">
-                    <button disabled={this.state.page<=1} type="button" className="btn btn-dark" onClick={this.handlePreviousclick}>&larr; previous</button>
-                    <button disabled={this.state.page+1>Math.ceil(this.state.totalResults/this.props.pageSize)} type="button" className="btn btn-dark" onClick={this.handleNextclick}>next &rarr;</button>
-                    </div>
-                </div>
-            </div>
-        )
+  constructor() {
+    super();
+    this.state = {
+      articles: [],
+      loading: false,
+      page: 1,
+      totalResults: 0
     }
+  }
+
+  async componentDidMount() {
+    await this.fetchNewsData();
+  }
+
+  async fetchNewsData() {
+    const { country, category, pageSize } = this.props;
+    const { page } = this.state;
+    
+    let url = `https://newsapi.org/v2/top-headlines?country=${country}&category=${category}&apiKey=fb5c69c601754b2abbc697ac218221c3&page=${page}&pageSize=${pageSize}`;
+    
+    this.setState({ loading: true });
+    try {
+      let data = await fetch(url);
+      let parsedData = await data.json();
+      this.setState({
+        articles: parsedData.articles,
+        totalResults: parsedData.totalResults,
+        loading: false
+      });
+    } catch (error) {
+      console.error("Error fetching news:", error);
+      this.setState({ loading: false });
+    }
+  }
+
+  handleNextClick = async () => {
+    await this.setState(prevState => ({ page: prevState.page + 1 }));
+    await this.fetchNewsData();
+    window.scrollTo(0, 0);
+  }
+
+  handlePreviousClick = async () => {
+    await this.setState(prevState => ({ page: prevState.page - 1 }));
+    await this.fetchNewsData();
+    window.scrollTo(0, 0);
+  }
+
+  render() {
+    const { articles, loading, page, totalResults } = this.state;
+    const { pageSize, category } = this.props;
+
+    return (
+      <div className="container">
+        <h1 className="section-title">Chronicle - Top Headlines</h1>
+        
+        {loading && <Spinner />}
+        
+        <div className="news-container">
+          {!loading && articles.map((article) => (
+            <div className="news-card" key={article.url}>
+              <div className="news-img-container">
+                <img 
+                  src={article.urlToImage || 'https://via.placeholder.com/300x200?text=No+Image'} 
+                  className="news-img" 
+                  alt={article.title} 
+                />
+              </div>
+              <div className="news-body">
+                <h3 className="news-title">{article.title?.slice(0, 60)}{article.title?.length > 60 ? "..." : ""}</h3>
+                <p className="news-description">
+                  {article.description?.slice(0, 100)}{article.description?.length > 100 ? "..." : ""}
+                </p>
+                <div className="news-meta">
+                  <span className="news-source">{article.source?.name}</span>
+                  <span className="news-date">
+                    {new Date(article.publishedAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <span className="news-category">{category}</span>
+                <a 
+                  href={article.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="read-more-btn"
+                >
+                  Read more
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="pagination">
+          <button 
+            disabled={page <= 1} 
+            className={`page-link ${page <= 1 ? 'disabled' : ''}`}
+            onClick={this.handlePreviousClick}
+          >
+            &larr; Previous
+          </button>
+          
+          <span className="page-link active">{page}</span>
+          
+          <button 
+            disabled={page + 1 > Math.ceil(totalResults / pageSize)} 
+            className={`page-link ${page + 1 > Math.ceil(totalResults / pageSize) ? 'disabled' : ''}`}
+            onClick={this.handleNextClick}
+          >
+            Next &rarr;
+          </button>
+        </div>
+      </div>
+    )
+  }
 }
 
 export default News
